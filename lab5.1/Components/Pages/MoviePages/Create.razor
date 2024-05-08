@@ -1,0 +1,88 @@
+﻿@page "/movies/create"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject lab5._1.Data.ApplicationDbContext DB
+@using lab5._1.Components.Class
+@inject NavigationManager NavigationManager
+@using Microsoft.EntityFrameworkCore;
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h4>Movie</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Movie" OnValidSubmit="HandlevalidSubmit" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            <div class="mb-3">
+                <label for="title" class="form-label">Title:</label> 
+                <InputText id="title" @bind-Value="Movie.Title" class="form-control" /> 
+                <ValidationMessage For="() => Movie.Title" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="description" class="form-label">Description:</label>
+                <InputSelect id="description" @bind-Value="Movie.Description" class="form-control">
+                    <option value="">Select Genre</option>
+                    @foreach (var genre in genres)
+                    {
+                        <option value="@genre">@genre</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => Movie.Description" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="relasedate" class="form-label">RelaseDate:</label> 
+                <InputDate id="relasedate" @bind-Value="Movie.RelaseDate" class="form-control"  />
+                <ValidationMessage For="() => Movie.RelaseDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="rate" class="form-label">Rate:</label> 
+                <InputNumber id="rate" @bind-Value="Movie.Rate" class="form-control" /> 
+                <ValidationMessage For="() => Movie.Rate" class="text-danger" /> 
+            </div>
+            <div class="mb-3">
+                <label for="imageurl" class="form-label">Image URL:</label>
+                <InputText id="imageurl" @bind-Value="Movie.ImageUrl" class="form-control" />
+                <ValidationMessage For="() => Movie.ImageUrl" class="text-danger" />
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/movies">Back to List</a>
+</div>
+
+@code {
+
+    [SupplyParameterFromForm]
+    public Movie Movie { get; set; } = new();
+    private string selectedGenre = "";
+    private readonly List<string> genres = new List<string> { "Action", "Drama", "Comedy", "Science Fiction", "Horror" };
+
+
+    private async Task HandlevalidSubmit()
+    {
+
+        var existingMovie = await DB.Movie.FirstOrDefaultAsync(m => m.Title == Movie.Title);
+        if (existingMovie != null)
+        {
+            var message = $"Movie with title {Movie.Title} already exists.";
+            NavigationManager.NavigateTo($"/movies/create?message={message}");
+
+        }
+        else
+        {  
+            DB.Movie.Add(Movie);
+            Movie.RateCount = 1;
+            await DB.SaveChangesAsync();
+            NavigationManager.NavigateTo("/movies");
+        }
+
+    }
+}

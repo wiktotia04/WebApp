@@ -1,0 +1,84 @@
+﻿@page "/movies"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.EntityFrameworkCore
+@inject lab5._1.Data.ApplicationDbContext DB
+@using lab5._1.Components.Class
+
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+<p>
+    <a href="movies/create">Create New</a>
+</p>
+
+
+<QuickGrid Class="table" Items="@SortedMovie">
+    <PropertyColumn Property="@(movie => movie.Title)" Sortable="true" />
+    @if (isUserAuthenticated)
+    {
+        <PropertyColumn Property="@(movie => movie.Description)" Sortable="true" />
+    }
+    <PropertyColumn Property="@(movie => movie.RelaseDate)" Sortable="true" Format="dd-MM-yyyy" />
+    <PropertyColumn Property="@(movie => movie.AverageRating)" Sortable="true">
+
+    </PropertyColumn>
+
+    <TemplateColumn Context="movie">
+        <a href="@($"movies/edit?id={movie.Id}")">Edit</a> |
+        <a href="@($"movies/details?id={movie.Id}")">Details</a> |
+        <a href="@($"movies/delete?id={movie.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+
+@code{
+
+    private bool isUserAuthenticated;
+    Movie? movie;
+
+    public IQueryable<Movie> Movies { get; set; } = null!;
+    public IQueryable<Movie> SortedMovie { get; set; } = null!;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        Movies = GetMovie().AsQueryable();
+        SortedMovie = Movies;
+        isUserAuthenticated = authState.User.Identity.IsAuthenticated;
+        LoadMovies();
+    }
+
+    private async Task LoadMovies()
+    {
+
+    }
+
+    public List<Movie> GetMovie()
+    {
+
+        var movies = new List<Movie>();
+        foreach (var item in DB.Movie)
+        {
+            movies.Add(item);
+            
+            
+        }
+
+        foreach (var items in movies)
+        {
+            Console.WriteLine(items.Title);
+        }
+
+        return movies;
+
+        
+
+    }
+
+    
+}
