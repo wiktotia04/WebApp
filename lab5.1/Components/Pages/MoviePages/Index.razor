@@ -5,6 +5,9 @@
 @using Microsoft.EntityFrameworkCore
 @inject lab5._1.Data.ApplicationDbContext DB
 @using lab5._1.Components.Class
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
 
 
 <PageTitle>Index</PageTitle>
@@ -15,7 +18,7 @@
 </p>
 
 
-<QuickGrid Class="table" Items="@SortedMovie">
+<QuickGrid Items="@MovieQueryable">
     <PropertyColumn Property="@(movie => movie.Title)" Sortable="true" />
     @if (isUserAuthenticated)
     {
@@ -35,50 +38,36 @@
 
 
 @code{
-
+    IQueryable<Movie> MovieQueryable = Enumerable.Empty<Movie>().AsQueryable();
     private bool isUserAuthenticated;
-    Movie? movie;
-
-    public IQueryable<Movie> Movies { get; set; } = null!;
-    public IQueryable<Movie> SortedMovie { get; set; } = null!;
-
-
+    [SupplyParameterFromForm]
+    Movie movie { get; set; } = new();
+    DateOnly SelectedDate;
+    static List<Movie> MoviesList = new();
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        Movies = GetMovie().AsQueryable();
-        SortedMovie = Movies;
         isUserAuthenticated = authState.User.Identity.IsAuthenticated;
-        LoadMovies();
+
+        ConvertListToQueryable();
+
     }
 
-    private async Task LoadMovies()
+    private void ConvertListToQueryable()
     {
-
+        MoviesList = DB.Movie.ToList();
+        if (MoviesList is null) return;
+        foreach (var movie in MoviesList.OrderBy(_ => _.Id))
+        {
+            MovieQueryable = MovieQueryable.Concat(new[] { movie }.AsQueryable());
+        }
     }
-
-    public List<Movie> GetMovie()
+    void GetDataAgain()
     {
-
-        var movies = new List<Movie>();
-        foreach (var item in DB.Movie)
-        {
-            movies.Add(item);
-            
-            
-        }
-
-        foreach (var items in movies)
-        {
-            Console.WriteLine(items.Title);
-        }
-
-        return movies;
-
-        
-
+        MovieQueryable = Enumerable.Empty<Movie>().AsQueryable();
+        ConvertListToQueryable();
     }
-
+   
     
 }
